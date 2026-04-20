@@ -189,8 +189,8 @@ export default function FestivalScroll() {
         transition={{ type: "spring", damping: 40, stiffness: 200, mass: 0.5 }}
       />
       
-      {/* Audio Element (Replace path with an actual track if desired) */}
-      <audio ref={audioRef} src="/ambient-track.mp3" loop />
+      {/* Audio Element (Actual Festival Audio) */}
+      <audio ref={audioRef} src="/ambient-track.ogg" loop />
       
       {/* Audio Controller */}
       {loaded && (
