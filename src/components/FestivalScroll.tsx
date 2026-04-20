@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useScroll, useTransform, motion } from "framer-motion";
+import { useScroll, useTransform, motion, useMotionValueEvent } from "framer-motion";
 
 const TOTAL_FRAMES = 450;
 
@@ -12,6 +12,10 @@ export default function FestivalScroll() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentIndexRef = useRef(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
+  const [isBlackOut, setIsBlackOut] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -131,6 +135,27 @@ export default function FestivalScroll() {
     };
   }, [loaded, scrollYProgress]);
 
+  // Track Mouse for Neon Cursor
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  const toggleAudio = () => {
+    if (!audioRef.current) return;
+    if (isAudioPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.volume = 0.5; // Ambient volume
+      audioRef.current.play().catch(() => {});
+    }
+    setIsAudioPlaying(!isAudioPlaying);
+  };
+
+
   // Text Animations Opacities
   const op0 = useTransform(scrollYProgress, [0, 0.05, 0.15], [0, 1, 0]); // 0% Intro
   const op25 = useTransform(scrollYProgress, [0.2, 0.25, 0.35], [0, 1, 0]); // 25%
@@ -145,8 +170,42 @@ export default function FestivalScroll() {
   const y3 = useTransform(scrollYProgress, [0.45, 0.6], [50, -50]);
   const y4 = useTransform(scrollYProgress, [0.7, 0.85], [100, 0]);
 
+  // Latch screen state to black once we hit the bottom
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    if (latest >= 0.95 && !isBlackOut) {
+      setIsBlackOut(true);
+    } else if (latest <= 0.05 && isBlackOut) {
+      setIsBlackOut(false);
+    }
+  });
+
   return (
     <div ref={containerRef} className="relative h-[600vh] bg-[#050505] cursor-default">
+      
+      {/* Neon Cursor Glow */}
+      <motion.div 
+        className="fixed top-0 left-0 w-48 h-48 rounded-full pointer-events-none z-50 bg-fuchsia-500/15 blur-3xl mix-blend-screen"
+        animate={{ x: mousePos.x - 96, y: mousePos.y - 96 }}
+        transition={{ type: "spring", damping: 40, stiffness: 200, mass: 0.5 }}
+      />
+      
+      {/* Audio Element (Replace path with an actual track if desired) */}
+      <audio ref={audioRef} src="/ambient-track.mp3" loop />
+      
+      {/* Audio Controller */}
+      {loaded && (
+        <button 
+          onClick={toggleAudio}
+          className="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full border border-white/20 bg-black/40 backdrop-blur-md flex items-center justify-center text-white/70 hover:bg-white hover:text-black hover:scale-110 transition-all duration-300"
+        >
+          {isAudioPlaying ? (
+            <svg className="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M14 3.227v17.546a1 1 0 01-1.46.892l-5.32-2.73H3a1 1 0 01-1-1V5.065a1 1 0 011-1h4.22l5.32-2.73a1 1 0 011.46.892zm4.182 3.123L17 7.557a7.51 7.51 0 010 8.886l1.182 1.207a9.51 9.51 0 000-11.3zM21 2.879l-1.182 1.207a12.51 12.51 0 010 15.828L21 21.121A14.51 14.51 0 0021 2.879z"></path></svg>
+          ) : (
+            <svg className="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M14 3.227v17.546a1 1 0 01-1.46.892l-5.32-2.73H3a1 1 0 01-1-1V5.065a1 1 0 011-1h4.22l5.32-2.73a1 1 0 011.46.892zm5 5.773h4v2h-4v-2H19zm2 4h4v2h-4v-2z"></path></svg>
+          )}
+        </button>
+      )}
+
       {/* Preloader Phase */}
       {!loaded && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]">
@@ -173,7 +232,12 @@ export default function FestivalScroll() {
         <div className="absolute inset-0 bg-[#050505] -z-10" />
 
         {/* Visual Environment Layer */}
-        <motion.div className="absolute inset-0" style={{ opacity: environmentOpacity }}>
+        <motion.div 
+          className="absolute inset-0" 
+          style={{ opacity: isBlackOut ? 0 : environmentOpacity }}
+          animate={{ opacity: isBlackOut ? 0 : undefined }}
+          transition={{ duration: 1 }}
+        >
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
           
           {/* Cinematic Adjustments: Vignette & Bloom simulation */}
@@ -191,15 +255,21 @@ export default function FestivalScroll() {
         {loaded && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             
-            {/* Intro */}
             <motion.div 
-              className="absolute text-center"
-              style={{ opacity: op0, y: y1 }}
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ opacity: isBlackOut ? 0 : 1 }}
+              animate={{ opacity: isBlackOut ? 0 : 1 }}
+              transition={{ duration: 0.5 }}
             >
-              <h1 className="text-white/95 text-5xl md:text-7xl font-extralight tracking-tighter text-glow drop-shadow-2xl">
-                Feel The Vibe
-              </h1>
-            </motion.div>
+              {/* Intro */}
+              <motion.div 
+                className="absolute text-center"
+                style={{ opacity: op0, y: y1 }}
+              >
+                <h1 className="text-white/95 text-5xl md:text-7xl font-extralight tracking-tighter text-glow drop-shadow-2xl">
+                  Feel The Vibe
+                </h1>
+              </motion.div>
 
             {/* Buildup Starts */}
             <motion.div 
@@ -229,6 +299,7 @@ export default function FestivalScroll() {
               <h2 className="text-white/95 text-5xl md:text-8xl font-bold tracking-widest text-glow drop-shadow-[0_0_40px_rgba(255,0,255,0.5)] leading-[1.1]">
                 Pure Chaos.<br/>Pure Energy.
               </h2>
+            </motion.div>
             </motion.div>
 
             {/* Emotional Outro / CTA */}
