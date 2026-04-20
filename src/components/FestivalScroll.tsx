@@ -313,6 +313,19 @@ export default function FestivalScroll() {
               <button className="pointer-events-auto px-10 py-5 bg-white text-black font-semibold text-lg uppercase tracking-widest rounded-full hover:bg-transparent hover:text-white border-2 border-transparent hover:border-white transition-all duration-500 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(255,255,255,0.8)] transform hover:scale-105 active:scale-95">
                 Join The Experience
               </button>
+              
+              {/* Portfolio Link */}
+              <div className="mt-16 text-center pointer-events-auto">
+                <p className="text-white/50 text-sm tracking-widest uppercase mb-2">Created by</p>
+                <a 
+                  href="https://mannu.codes" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-white/80 hover:text-cyan-400 text-glow hover:text-glow-neon text-lg md:text-xl font-medium tracking-[0.15em] transition-all duration-300 inline-block transform hover:scale-105"
+                >
+                  Mannu Baveja
+                </a>
+              </div>
             </motion.div>
 
           </div>
